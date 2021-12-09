@@ -91,10 +91,17 @@ class ResumeGenerator():
                                 fontSize=8,
                                 spaceAfter=.1*inch))
         
-        self.data = data
+        self.data = [
+            ['OBJECTIVE', Paragraph(data['objective'], self.styles['Content'])],
+            ['SUMMARY', Paragraph(data['summary'], self.styles['Content'])],
+            ['EDUCATION', Paragraph(data['education'], self.styles['Content'])],
+            ['SKILLS', Paragraph(data['skills'], self.styles['Content'])],
+            ['EXPERIENCE', [Paragraph(x, self.styles['Content']) for x in data['experience']]],
+            ['PROJECTS', [Paragraph(x, self.styles['Content']) for x in data['projects']]]
+            ]
         self.contact = contact
 
-    def build_pdf(self, data, contact):
+    def build_pdf(self):
         pdfname = 'resume.pdf'
         doc = SimpleDocTemplate(
             pdfname,
@@ -106,7 +113,7 @@ class ResumeGenerator():
         style = self.styles["Normal"]  # set the style to normal
         story = []  # create a blank story to tell
         contentTable = Table(
-            data,
+            self.data,
             colWidths=[
                 0.8 * inch,
                 6.9 * inch])
@@ -121,12 +128,11 @@ class ResumeGenerator():
         doc.build(
             story,
             onFirstPage=self.myPageWrapper(
-                contact)
+                self.contact)
             )
         return pdfname
 
-
-    def myPageWrapper(self, contact):
+    def myPageWrapper(self):
         """
             Draw the framework for the first page,
             pass in contact info as a dictionary
@@ -163,14 +169,5 @@ class ResumeGenerator():
             canvas.restoreState()
         return myPage
 
-
     def generate(self):
-        tblData = [
-            ['OBJECTIVE', Paragraph(self.data['objective'], self.styles['Content'])],
-            ['SUMMARY', Paragraph(self.data['summary'], self.styles['Content'])],
-            ['EDUCATION', Paragraph(self.data['education'], self.styles['Content'])],
-            ['SKILLS', Paragraph(self.data['skills'], self.styles['Content'])],
-            ['EXPERIENCE', [Paragraph(x, self.styles['Content']) for x in self.data['experience']]],
-            ['PROJECTS', [Paragraph(x, self.styles['Content']) for x in self.data['projects']]]
-            ]
-        self.build_pdf(tblData, self.contact)
+        self.build_pdf()
