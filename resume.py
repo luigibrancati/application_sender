@@ -5,6 +5,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfbase.pdfmetrics import registerFont, registerFontFamily
 from reportlab.pdfbase.ttfonts import TTFont
+import pandas as pd
 
 
 contact_var = {
@@ -94,14 +95,26 @@ class ResumeGenerator():
         self.data = [
             ['OBJECTIVE', Paragraph(data['objective'], self.styles['Content'])],
             ['SUMMARY', Paragraph(data['summary'], self.styles['Content'])],
-            ['EDUCATION', Paragraph(data['education'], self.styles['Content'])],
-            ['SKILLS', Paragraph(data['skills'], self.styles['Content'])],
-            ['EXPERIENCE', [Paragraph(x, self.styles['Content']) for x in data['experience']]],
-            ['PROJECTS', [Paragraph(x, self.styles['Content']) for x in data['projects']]]
-            ]
+            ['EDUCATION', [Paragraph(x, self.styles['Content']) for x in data['education']]],
+            ['EXPERIENCE', [Paragraph(x, self.styles['Content']) for x in data['experience']]]
+        ]
         self.contact = contact
 
-    def build_pdf(self):
+    @classmethod
+    def random_resume(cls):
+        """Pulls random data from files."""
+        name = pd.read_csv('./names.csv').sample(n=1)['names'].values[0]
+        surname = pd.read_csv('./surnames.csv').sample(n=1)['surnames'].values[0]
+        fullname = name + surname
+        contact = {
+            'name': f'{name} {surname}',
+            'website': f'http://github.com/{fullname}/',
+            'email': f'{fullname}@gmail.com',
+            'address': '3092 Nathaniel Rochester Hall, Rochester, NY 14623',
+            'phone': '(614)365-1089'
+        }
+
+    def generate(self):
         pdfname = 'resume.pdf'
         doc = SimpleDocTemplate(
             pdfname,
@@ -110,7 +123,7 @@ class ResumeGenerator():
             topMargin=.7 * inch,
             rightMargin=.4 * inch,
             leftMargin=.4 * inch)  # set the doc template
-        style = self.styles["Normal"]  # set the style to normal
+        # style = self.styles["Normal"]  # set the style to normal
         story = []  # create a blank story to tell
         contentTable = Table(
             self.data,
@@ -127,8 +140,7 @@ class ResumeGenerator():
         story.append(contentTable)
         doc.build(
             story,
-            onFirstPage=self.myPageWrapper(
-                self.contact)
+            onFirstPage=self.myPageWrapper()
             )
         return pdfname
 
@@ -168,6 +180,3 @@ class ResumeGenerator():
             # restore the state to what it was when saved
             canvas.restoreState()
         return myPage
-
-    def generate(self):
-        self.build_pdf()
