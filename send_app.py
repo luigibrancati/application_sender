@@ -1,5 +1,5 @@
 from selenium import webdriver
-from resume import ResumeGenerator
+from build_resume import ResumeGenerator
 from fake_contacts import FakeIdentity
 from kellogs_app import KellogsApplication
 import logging
