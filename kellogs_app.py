@@ -184,15 +184,13 @@ class KellogsApplication():
     def fill_questionnaire(self):
         # Solving questionnaire
         logging.info("Filling out math questionnaire")
-        for i, rg in enumerate(self.driver.find_elements(By.CLASS_NAME, 'radioGroup')):
+        for rg in self.driver.find_elements(By.CLASS_NAME, 'radioGroup'):
             for c in rg.find_elements_by_class_name('sfRadioInputField'):
-                if i == 0 and c.text == 'Yes':
+                if c.text == 'Yes':
                     c.find_element_by_tag_name('a').click()
-                if i == 1 and c.text == '350 LBS':
+                elif c.text == '350 LBS':
                     c.find_element_by_tag_name('a').click()
-                if i == 2 and c.text == '800 LBS':
-                    c.find_element_by_tag_name('a').click()
-                if i == 3 and c.text == 'Yes':
+                elif c.text == '800 LBS':
                     c.find_element_by_tag_name('a').click()
 
     def fill_missing_infos(self, fake_id):
@@ -215,13 +213,13 @@ class KellogsApplication():
                         else:
                             logging.info("Couldn't find major %s %s in education row %i" % (fake_id.education[i].type, fake_id.education[i].major, i))
                 elif h2.text == 'Candidate-Specific Information':
-                    logging.info("Added major %s %s to education row %i" % (fake_id.education[i].type, fake_id.education[i].major, i))
+                    logging.info("Adding availability date")
                     try:
                         datepicker = div.find_element_by_css_selector('div.row span.datepicker input')
                         datepicker.click()
                         datepicker.clear()
                         self._send_keys(datepicker, datetime.strftime(fake_id.availability_date, '%m/%d/%Y')) # Date available
-                        logging.info("Set availability")
+                        logging.info("Added availability date")
                     except NoSuchElementException:
                         logging.info("Couldn't find availability datepicker")
                         pass
