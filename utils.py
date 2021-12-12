@@ -1,6 +1,4 @@
 from functools import wraps
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import time
 
 def delay(t: int=1):

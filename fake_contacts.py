@@ -72,7 +72,7 @@ class JobExperienceProvider(LoremProvider, JobProvider, CompanyProvider, Address
 
     def job_experience(self) -> str:
         start_date = self.date_this_decade(before_today=True)
-        end_date = self.date_between(start_date=start_date)
+        end_date = self.date_between(start_date=start_date) + timedelta(days=31)
         return Job(self.company(), f"{self.city()}, {self.country_code()}", start_date, end_date, self.job(), self.paragraphs(nb=3))
 
     def job_curricula(self, n: int = 3, n_random: bool = False) -> str:
@@ -220,7 +220,7 @@ class EducationProvider(LoremProvider, AddressProvider, DatetimeProvider):
 
     def education(self) -> str:
         start_date = self.date_this_decade(before_today=True).replace(day=1)
-        end_date = self.date_between(start_date=start_date).replace(day=1)
+        end_date = self.date_between(start_date=start_date).replace(day=1) + timedelta(days=31)
         uni = self.random_university()
         major = self.random_major()
         return Education(uni[0], uni[1], start_date, end_date, major[1], major[0])

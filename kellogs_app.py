@@ -1,4 +1,3 @@
-from typing import final
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -9,7 +8,7 @@ import logging
 import time
 import os
 from datetime import datetime
-
+import random
 
 class KellogsApplication():
     _TIMEOUT = 30
@@ -24,6 +23,7 @@ class KellogsApplication():
         self.driver = driver
         self.driver.implicitly_wait(10)
         self.url = KellogsApplication._URLS[state]
+        self.state = state
         self.resume_path = resume_path
     
     @staticmethod
@@ -33,15 +33,15 @@ class KellogsApplication():
         el.send_keys(keys)
 
     @delay(t=2)
-    def _wait_element(self, locator):
+    def _wait_element(self, locator, mult = 1):
         try:
-            WebDriverWait(self.driver, KellogsApplication._TIMEOUT).until(
+            WebDriverWait(self.driver, mult * KellogsApplication._TIMEOUT).until(
                 EC.presence_of_element_located(locator)
             )
-            WebDriverWait(self.driver, KellogsApplication._TIMEOUT).until(
+            WebDriverWait(self.driver, mult * KellogsApplication._TIMEOUT).until(
                 EC.element_to_be_clickable(locator)
             )
-            WebDriverWait(self.driver, KellogsApplication._TIMEOUT).until(
+            WebDriverWait(self.driver, mult * KellogsApplication._TIMEOUT).until(
                 EC.visibility_of_element_located(locator)
             )
         except TimeoutException:
@@ -52,6 +52,7 @@ class KellogsApplication():
     def driver_connect(self):
         # Connect to url
         logging.info("Connecting to url %s" % self.url)
+        logging.info(f"State: {self.state}")
         self.driver.get(self.url)
 
     def accept_cookie(self):
@@ -79,7 +80,7 @@ class KellogsApplication():
         # Click link to create new account
         logging.info("Creating a new account")
         try:
-            self._wait_element(self.driver, KellogsApplication._TIMEOUT, (By.CSS_SELECTOR, '.bottomLink a'))
+            self._wait_element((By.CSS_SELECTOR, '.bottomLink a'))
             WebDriverWait(self.driver, KellogsApplication._TIMEOUT).until(
                 EC.invisibility_of_element_located((By.CLASS_NAME, "loading_indicator_layout_static"))
             )
@@ -97,7 +98,7 @@ class KellogsApplication():
     def fill_new_account_info(self, fake_id):
         # Filling new account infos
         logging.info("Filling fake id infos into new account")
-        self._wait_element(self.driver, KellogsApplication._TIMEOUT, (By.ID, "fbclc_userName"))
+        self._wait_element((By.ID, "fbclc_userName"))
         self._send_keys(self.driver.find_element(By.ID, "fbclc_userName"), fake_id.email)
         self._send_keys(self.driver.find_element(By.ID, "fbclc_emailConf"), fake_id.email)
         self._send_keys(self.driver.find_element(By.ID, "fbclc_pwd"), fake_id.pwd)
@@ -113,7 +114,7 @@ class KellogsApplication():
         logging.info("CAPTCHA must be solved by hand")
         # Must be done by hand unfortunately
         logging.info("Finding CAPTCHA iframe")
-        self._wait_element(self.driver, KellogsApplication._TIMEOUT, (By.CSS_SELECTOR, 'iframe[title="reCAPTCHA"]'))
+        self._wait_element((By.CSS_SELECTOR, 'iframe[title="reCAPTCHA"]'))
         self.driver.execute_script("document.getElementById('dataPrivacyId').scrollIntoView(true);")
         logging.info("Switching to CAPTCHA iframe")
         self.driver.switch_to.frame(self.driver.find_element(By.CSS_SELECTOR, 'iframe[title="reCAPTCHA"]'))
@@ -134,7 +135,7 @@ class KellogsApplication():
             exit(1)
         time.sleep(2)
         logging.info("Accepting privacy")
-        self._wait_element(self.driver, KellogsApplication._TIMEOUT, (By.ID, "dataPrivacyId"))
+        self._wait_element((By.ID, "dataPrivacyId"))
         self.driver.find_element(By.ID, "dataPrivacyId").click()
         self.driver.find_element(By.ID, "dlgButton_20:").click()
         self.driver.find_element(By.ID, "fbclc_createAccountButton").click()
@@ -144,7 +145,7 @@ class KellogsApplication():
         # Loading resume
         logging.info("Loading resume")
         try:
-            self._wait_element(self.driver, KellogsApplication._TIMEOUT, (By.CLASS_NAME, "attachActions"))
+            self._wait_element((By.CLASS_NAME, "attachActions"))
             self.driver.find_element(By.CLASS_NAME, "attachActions").click()
             self._send_keys(self.driver.find_element(By.ID, "49:_file"), os.path.abspath(self.resume_path)) # Upload Resume
         except Exception as e:
@@ -156,18 +157,18 @@ class KellogsApplication():
     def fill_profile_info(self, fake_id):
         # Filling missing profile infos
         logging.info("Filling out profile and candidate infos")
-        self._wait_element(self.driver, KellogsApplication._TIMEOUT, (By.NAME, "currentTitle"))
+        self._wait_element((By.NAME, "currentTitle"))
         self._send_keys(self.driver.find_element(By.NAME, "currentTitle"), fake_id.title) # Title
-        self._wait_element(self.driver, KellogsApplication._TIMEOUT, (By.NAME, "citizen"))
+        self._wait_element((By.NAME, "citizen"))
         Select(self.driver.find_element(By.NAME, "citizen")).select_by_visible_text("Yes") # Citizen of US
-        self.driver.find_element(By.NAME, "expectedSalaryRange").self._send_keys("100000") # Salary expectation
+        self._send_keys(self.driver.find_element(By.NAME, "expectedSalaryRange"), str(random.randint(30000,100000))) # Salary expectation
         Select(self.driver.find_element(By.NAME, "candidateSource")).select_by_value("3217000") # Source for job posting
         Select(self.driver.find_element(By.NAME, "presentEmployer")).select_by_value("299") # Kellog is present employer
 
     def fill_equal_employment(self, fake_id):
         # Filling EE infos
         logging.info("Filling out equal employement infos")
-        self._wait_element(self.driver, KellogsApplication._TIMEOUT, (By.NAME, "custCountry"))
+        self._wait_element((By.NAME, "custCountry"))
         Select(self.driver.find_element(By.NAME, "custCountry")).select_by_value("3206850") # Country of origin
         Select(self.driver.find_element(By.NAME, "veteranStatus")).select_by_value("299") # Veteran
         Select(self.driver.find_element(By.NAME, "disabilityStatus")).select_by_value("299") # Disability
@@ -194,7 +195,7 @@ class KellogsApplication():
                 if i == 3 and c.text == 'Yes':
                     c.find_element_by_tag_name('a').click()
 
-    def fill_missing_infos(self, fake_id, faker):
+    def fill_missing_infos(self, fake_id):
         # Filling infos usually missing
         logging.info("Filling out status of education")
         [Select(el).select_by_value('296') for el in self.driver.find_elements(By.NAME, 'VFLD4')]
@@ -231,8 +232,9 @@ class KellogsApplication():
         for button in self.driver.find_elements(By.CLASS_NAME, 'rcmSaveButton'):
             if 'submit' in button.get_attribute('onclick'):
                 button.click()
-                logging.info("Application submitted")
                 break
+        self._wait_element((By.ID, 'applyConfirmMsg'))
+        logging.info("Application submitted")
 
     def close(self):
         logging.info("Closing driver")
@@ -252,4 +254,5 @@ class KellogsApplication():
         self.fill_questionnaire()
         self.fill_missing_infos(fake_id)
         self.apply()
+        time.sleep(5)
         self.close()
