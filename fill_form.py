@@ -46,7 +46,6 @@ class ApplicationFiller():
             )
         except TimeoutException:
             logging.error(error_msg)
-            self.driver.quit()
             raise TimeoutException(error_msg)
 
     def driver_connect(self):
@@ -111,15 +110,14 @@ class ApplicationFiller():
 
     def start_captcha(self):
         # Must be done by hand unfortunately
-        
         logging.info("Starting CAPTCHA")
         logging.info("CAPTCHA must be solved by hand")
-        logging.info("Finding CAPTCHA iframe")
         try:
             self._wait_element((By.CSS_SELECTOR, 'iframe[title="reCAPTCHA"]'), "Timeout, couldn't find captcha!")
         except:
             logging.info("Ignoring captcha since it wasn't found")
             return
+        logging.info("Finding CAPTCHA iframe")
         self.driver.execute_script("document.getElementById('dataPrivacyId').scrollIntoView(true);")
         logging.info("Switching to CAPTCHA iframe")
         self.driver.switch_to.frame(self.driver.find_element(By.CSS_SELECTOR, 'iframe[title="reCAPTCHA"]'))
@@ -248,19 +246,21 @@ class ApplicationFiller():
         self.driver.close()
 
     def submit(self, fake_id):
-        self.driver_connect()
-        self.accept_cookie()
-        self.new_application()
-        self.create_new_account()
-        self.fill_new_account_info(fake_id)
-        self.start_captcha()
-        self.accepting_privacy()
-        time.sleep(2)
-        self.load_resume()
-        self.fill_profile_info(fake_id)
-        self.fill_equal_employment(fake_id)
-        self.fill_questionnaire()
-        self.fill_missing_infos(fake_id)
-        self.apply()
-        time.sleep(5)
-        self.close()
+        try:
+            self.driver_connect()
+            self.accept_cookie()
+            self.new_application()
+            self.create_new_account()
+            self.fill_new_account_info(fake_id)
+            self.start_captcha()
+            self.accepting_privacy()
+            time.sleep(2)
+            self.load_resume()
+            self.fill_profile_info(fake_id)
+            self.fill_equal_employment(fake_id)
+            self.fill_questionnaire()
+            self.fill_missing_infos(fake_id)
+            self.apply()
+            time.sleep(5)
+        finally:
+            self.close()
