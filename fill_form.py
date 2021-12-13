@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 import random
 
-class KellogsApplication():
+class ApplicationFiller():
     _TIMEOUT = 30
     _URLS = {
         'NE': "https://jobs.kellogg.com/job/Omaha-Permanent-Production-Associate-Omaha-NE-68103/817685900/z",
@@ -22,7 +22,7 @@ class KellogsApplication():
     def __init__(self, driver, state, resume_path):
         self.driver = driver
         self.driver.implicitly_wait(10)
-        self.url = KellogsApplication._URLS[state]
+        self.url = ApplicationFiller._URLS[state]
         self.state = state
         self.resume_path = resume_path
     
@@ -35,13 +35,13 @@ class KellogsApplication():
     @delay(t=2)
     def _wait_element(self, locator, mult = 1):
         try:
-            WebDriverWait(self.driver, mult * KellogsApplication._TIMEOUT).until(
+            WebDriverWait(self.driver, mult * ApplicationFiller._TIMEOUT).until(
                 EC.presence_of_element_located(locator)
             )
-            WebDriverWait(self.driver, mult * KellogsApplication._TIMEOUT).until(
+            WebDriverWait(self.driver, mult * ApplicationFiller._TIMEOUT).until(
                 EC.element_to_be_clickable(locator)
             )
-            WebDriverWait(self.driver, mult * KellogsApplication._TIMEOUT).until(
+            WebDriverWait(self.driver, mult * ApplicationFiller._TIMEOUT).until(
                 EC.visibility_of_element_located(locator)
             )
         except TimeoutException:
@@ -81,7 +81,7 @@ class KellogsApplication():
         logging.info("Creating a new account")
         try:
             self._wait_element((By.CSS_SELECTOR, '.bottomLink a'))
-            WebDriverWait(self.driver, KellogsApplication._TIMEOUT).until(
+            WebDriverWait(self.driver, ApplicationFiller._TIMEOUT).until(
                 EC.invisibility_of_element_located((By.CLASS_NAME, "loading_indicator_layout_static"))
             )
             self.driver.find_element(By.CSS_SELECTOR, '.bottomLink a').click()
@@ -126,7 +126,7 @@ class KellogsApplication():
         self.driver.switch_to.default_content()
         try:
             logging.info("Waiting for CAPTCHA to be solved")
-            WebDriverWait(self.driver, 4*KellogsApplication._TIMEOUT).until_not(
+            WebDriverWait(self.driver, 4*ApplicationFiller._TIMEOUT).until_not(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, 'iframe[title="recaptcha challenge expires in two minutes"]'))
             )
         except TimeoutException:

@@ -1,7 +1,7 @@
 from selenium import webdriver
 from build_resume import ResumeGenerator
-from fake_contacts import FakeIdentity
-from kellogs_app import KellogsApplication
+from fake_identity import FakeIdentity
+from fill_form import ApplicationFiller
 import logging
 from datetime import datetime
 
@@ -12,5 +12,5 @@ fake_id = FakeIdentity()
 resume = ResumeGenerator(fake_id.curriculum(), fake_id.contacts())
 resume.generate()
 
-application = KellogsApplication(webdriver.Firefox(), fake_id.state, './resume.pdf')
+application = ApplicationFiller(webdriver.Firefox(), fake_id.state, './resume.pdf')
 application.submit(fake_id)
