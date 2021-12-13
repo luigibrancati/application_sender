@@ -174,9 +174,9 @@ class ApplicationFiller():
         Select(self.driver.find_element(By.NAME, "disabilityStatus")).select_by_value("299") # Disability
         Select(self.driver.find_element(By.NAME, "custAge")).select_by_value("298") # Age 18+
         Select(self.driver.find_element(By.NAME, "cust_sponsor")).select_by_value("299") # Sponsorship
-        Select(self.driver.find_element(By.NAME, "custPrev")).select_by_value("299") # Worked for kellogs
-        Select(self.driver.find_element(By.NAME, "custcontr")).select_by_value("299") # Contractor for Kellogs
-        Select(self.driver.find_element(By.NAME, "custRel")).select_by_value("299") # Relative for kellogs
+        Select(self.driver.find_element(By.NAME, "custPrev")).select_by_value("299") # Worked for employer before
+        Select(self.driver.find_element(By.NAME, "custcontr")).select_by_value("299") # Contractor for employer
+        Select(self.driver.find_element(By.NAME, "custRel")).select_by_value("299") # Relative in employer
         Select(self.driver.find_element(By.NAME, "custAccom")).select_by_value("298") # Accomodation
         Select(self.driver.find_element(By.NAME, "custgender")).select_by_value("71046" if fake_id.gender == 'F' else "71047") # Gender
         Select(self.driver.find_element(By.NAME, "disabilityselection")).select_by_value("71280") # Disability 2
