@@ -1,4 +1,5 @@
 from datetime import datetime, date, timedelta
+from dateutil.relativedelta import relativedelta
 from math import ceil
 import random
 import re
@@ -46,7 +47,7 @@ class Education():
         return f"""\
         <b>{self.uni}</b> - {self.location}<br/>
         {self.type} {self.major}<br/>
-        {date.strftime(self.start_date, '%B, %Y')} - {date.strftime(self.end_date, '%B, %Y')}
+        {date.strftime(self.start_date, '%B, %Y')} - {date.strftime(self.end_date, '%B, %Y') if self.end_date else 'current'}
         """
 
 
@@ -63,22 +64,34 @@ class Job():
     def __str__(self) -> str:
         return f"""\
         <b>{self.company}</b> - {self.location}<br/>\
-        <alignment=TA_RIGHT>{self.title}: {date.strftime(self.start_date, '%B, %Y')} - {date.strftime(self.end_date, '%B, %Y')}</alignment><br/>\
+        <alignment=TA_RIGHT>{self.title}: {date.strftime(self.start_date, '%B, %Y')} - {date.strftime(self.end_date, '%B, %Y') if self.end_date else 'current'}</alignment><br/>\
         {''.join(self.desc)}<br/>\
         """
 
 
 class JobExperienceProvider(LoremProvider, JobProvider, CompanyProvider, AddressProvider, DatetimeProvider):
 
-    def job_experience(self) -> str:
-        start_date = self.date_this_decade(before_today=True)
-        end_date = self.date_between(start_date=start_date) + timedelta(days=31)
+    def random_job_duration(self) -> int:
+        return random.randint(2, 24)
+
+    def random_job_experience(self, start_dt: datetime=None, duration: int=None) -> Job:        
+        if start_dt:
+            start_date = start_dt
+        else:
+            start_date = self.date_this_decade(before_today=True)
+
+        end_date = start_date
+        if duration:
+            end_date = end_date + relativedelta(months=duration)
+        else:
+            end_date = self.date_between(start_date=start_date)
+
         return Job(self.company(), f"{self.city()}, {self.country_code()}", start_date, end_date, self.job(), self.paragraphs(nb=3))
 
-    def job_curricula(self, n: int = 3, n_random: bool = False) -> str:
+    def random_job_curriculum(self, n: int = 3, n_random: bool = False) -> str:
         if n_random:
             n = ceil((0.60 + random.random() * 0.80) * n)
-        return [self.job_experience() for _ in range(n)]
+        return [self.random_job_experience() for _ in range(n)]
 
 
 class EducationProvider(LoremProvider, AddressProvider, DatetimeProvider):
@@ -102,9 +115,12 @@ class EducationProvider(LoremProvider, AddressProvider, DatetimeProvider):
             ('Dartmouth College', 'Hanover, NH')
         ))
     
-    def random_major(self):
-        type = random.choice(('M.Sc. ', 'B.Sc. '))
-        return (type, random.choice((
+    def random_major(self, grade=None):
+        if grade:
+            maj_grade = 'B.Sc. ' if 'B' in grade else 'M.Sc. '
+        else:
+            maj_grade = random.choice(('M.Sc. ', 'B.Sc. '))
+        return (maj_grade, random.choice((
             'Accounting',
             'Advertising/ Media',
             'Agricultural Economics',
@@ -218,17 +234,54 @@ class EducationProvider(LoremProvider, AddressProvider, DatetimeProvider):
             'Urban Studies'
         )))
 
-    def education(self) -> str:
-        start_date = self.date_this_decade(before_today=True).replace(day=1)
-        end_date = self.date_between(start_date=start_date).replace(day=1) + timedelta(days=31)
+    def random_maj_duration(self, maj_grade: str) -> int:
+        return (36 if 'B' in maj_grade else 24) + random.randint(-2, 6)
+
+    def random_education(self, start_year: int=None, maj_grade: str='', duration: int=None) -> Education:
         uni = self.random_university()
-        major = self.random_major()
+        major = self.random_major(maj_grade)
+        
+        if start_year:
+            start_date = date(start_year, 9, 1)
+        else:
+            start_date = self.date_this_decade(before_today=True).replace(day=1, month=9)
+        
+        end_date = start_date
+        if duration:
+            end_date = end_date + relativedelta(months=duration)
+        else:
+            end_date = end_date + relativedelta(months=self.random_maj_duration(major[0]))
+
         return Education(uni[0], uni[1], start_date, end_date, major[1], major[0])
     
-    def education_curricula(self, n: int = 3, n_random: bool = False) -> str:
+    def random_education_curriculum(self, n: int = 3, n_random: bool = False) -> str:
         if n_random:
             n = ceil((0.60 + random.random() * 0.80) * n)
-        return [self.education() for _ in range(n)]
+        return [self.random_education() for _ in range(n)]
+
+class CurriculumProvider(EducationProvider, JobExperienceProvider):
+    
+    def random_curriculum(self, n_edu: int=2, n_jobs: int=2, n_random: bool=True):
+        if n_random:
+            n_edu = ceil((0.60 + random.random() * 0.80) * n_edu)
+            n_jobs = ceil((0.60 + random.random() * 0.80) * n_jobs)
+        job_months = [self.random_job_duration() for _ in range(n_jobs)]
+        grades = ['B'] + [random.choice(['B', 'M']) for _ in range(n_edu-1)]
+        edu_months = [fake.random_maj_duration(g) for g in grades]
+        total_months = sum(edu_months)+sum(job_months)
+        start_date = datetime.now().date() - relativedelta(months=total_months) - relativedelta(years=1)
+
+        edu_curr = []
+        job_curr = []
+        for i in range(n_edu):
+            ec = fake.random_education(start_year=start_date.year, maj_grade=grades[i], duration=edu_months[i])
+            edu_curr.append(ec)
+            start_date = ec.end_date
+        for i in range(n_jobs):
+            job = fake.random_job_experience(start_dt=start_date, duration=job_months[i])
+            job_curr.append(job)
+            start_date = job.end_date
+        return edu_curr, job_curr
 
 
 fake = Faker('en_US')
@@ -239,6 +292,7 @@ fake.add_provider(LocalizedPhoneAddressProvider)
 fake.add_provider(JobExperienceProvider)
 fake.add_provider(EducationProvider)
 fake.add_provider(MiscProvider)
+fake.add_provider(CurriculumProvider)
 
 
 class FakeIdentity():
@@ -255,8 +309,7 @@ class FakeIdentity():
         self.phone = fake.localize_phone(self.state)
         self.objective = fake.paragraph(nb_sentences=3)
         self.summary = fake.paragraph(nb_sentences=3)
-        self.education = fake.education_curricula(n=2, n_random=True)
-        self.work_experience = fake.job_curricula(n=3, n_random=True)
+        self.education, self.work_experience = fake.random_curriculum()
         self.pwd = fake.password()
         self.availability_date = self.calc_availability_date()
 
@@ -287,4 +340,4 @@ class FakeIdentity():
 
 
 if __name__ == '__main__':
-    print(FakeIdentity().availability_date)
+    print(FakeIdentity().curriculum())
