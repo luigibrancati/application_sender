@@ -28,26 +28,25 @@ class ApplicationFiller():
     
     @staticmethod
     @delay()
-    def _send_keys(el, keys):
+    def _send_keys(el, keys: str) -> None:
         el.clear()
         el.send_keys(keys)
 
     @delay(t=2)
-    def _wait_element(self, locator, mult = 1):
+    def _wait_element(self, locator: tuple[By, str], error_msg: str = "error") -> None:
         try:
-            WebDriverWait(self.driver, mult * ApplicationFiller._TIMEOUT).until(
+            WebDriverWait(self.driver, ApplicationFiller._TIMEOUT).until(
                 EC.presence_of_element_located(locator)
             )
-            WebDriverWait(self.driver, mult * ApplicationFiller._TIMEOUT).until(
+            WebDriverWait(self.driver, ApplicationFiller._TIMEOUT).until(
                 EC.element_to_be_clickable(locator)
             )
-            WebDriverWait(self.driver, mult * ApplicationFiller._TIMEOUT).until(
+            WebDriverWait(self.driver, ApplicationFiller._TIMEOUT).until(
                 EC.visibility_of_element_located(locator)
             )
         except TimeoutException:
-            logging.error("timeout")
-            self.driver.quit()
-            exit(1)
+            logging.error(error_msg)
+            raise TimeoutException(error_msg)
 
     def driver_connect(self):
         # Connect to url
@@ -80,10 +79,10 @@ class ApplicationFiller():
         # Click link to create new account
         logging.info("Creating a new account")
         try:
-            self._wait_element((By.CSS_SELECTOR, '.bottomLink a'))
             WebDriverWait(self.driver, ApplicationFiller._TIMEOUT).until(
                 EC.invisibility_of_element_located((By.CLASS_NAME, "loading_indicator_layout_static"))
             )
+            self._wait_element((By.CSS_SELECTOR, '.bottomLink a'))
             self.driver.find_element(By.CSS_SELECTOR, '.bottomLink a').click()
             logging.info("Started process to create a new account")
         except NoSuchElementException:
@@ -109,31 +108,39 @@ class ApplicationFiller():
         Select(self.driver.find_element(By.ID, "fbclc_ituCode")).select_by_value('US')
         Select(self.driver.find_element(By.ID, "fbclc_country")).select_by_value('US')
 
-    def solve_captcha(self):
+    def start_captcha(self):
+        # Must be done by hand unfortunately
         logging.info("Starting CAPTCHA")
         logging.info("CAPTCHA must be solved by hand")
-        # Must be done by hand unfortunately
+        try:
+            self._wait_element((By.CSS_SELECTOR, 'iframe[title="reCAPTCHA"]'), "Timeout, couldn't find captcha!")
+        except:
+            logging.info("Ignoring captcha since it wasn't found")
+            return
         logging.info("Finding CAPTCHA iframe")
-        self._wait_element((By.CSS_SELECTOR, 'iframe[title="reCAPTCHA"]'))
         self.driver.execute_script("document.getElementById('dataPrivacyId').scrollIntoView(true);")
         logging.info("Switching to CAPTCHA iframe")
         self.driver.switch_to.frame(self.driver.find_element(By.CSS_SELECTOR, 'iframe[title="reCAPTCHA"]'))
         logging.info("Clicking CAPTCHA spinner")
         spinner = self.driver.find_element(By.CLASS_NAME, "recaptcha-checkbox-border")
-        spinner.click()
+        spinner.click() # Click Captcha spinner to start it
         time.sleep(2)
+
+        # Solve captcha
         logging.info("Switching back to main window")
         self.driver.switch_to.default_content()
         try:
+            # Check whether captcha has been solved by checking if the window is still there
             logging.info("Waiting for CAPTCHA to be solved")
             WebDriverWait(self.driver, 4*ApplicationFiller._TIMEOUT).until_not(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, 'iframe[title="recaptcha challenge expires in two minutes"]'))
             )
         except TimeoutException:
-            logging.error("timeout")
+            logging.error("timeout, captcha hasn't been solved in time")
             self.driver.quit()
             exit(1)
-        time.sleep(2)
+
+    def accepting_privacy(self):
         logging.info("Accepting privacy")
         self._wait_element((By.ID, "dataPrivacyId"))
         self.driver.find_element(By.ID, "dataPrivacyId").click()
@@ -239,18 +246,21 @@ class ApplicationFiller():
         self.driver.close()
 
     def submit(self, fake_id):
-        self.driver_connect()
-        self.accept_cookie()
-        self.new_application()
-        self.create_new_account()
-        self.fill_new_account_info(fake_id)
-        self.solve_captcha()
-        time.sleep(2)
-        self.load_resume()
-        self.fill_profile_info(fake_id)
-        self.fill_equal_employment(fake_id)
-        self.fill_questionnaire()
-        self.fill_missing_infos(fake_id)
-        self.apply()
-        time.sleep(5)
-        self.close()
+        try:
+            self.driver_connect()
+            self.accept_cookie()
+            self.new_application()
+            self.create_new_account()
+            self.fill_new_account_info(fake_id)
+            self.start_captcha()
+            self.accepting_privacy()
+            time.sleep(2)
+            self.load_resume()
+            self.fill_profile_info(fake_id)
+            self.fill_equal_employment(fake_id)
+            self.fill_questionnaire()
+            self.fill_missing_infos(fake_id)
+            self.apply()
+            time.sleep(5)
+        finally:
+            self.close()

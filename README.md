@@ -27,3 +27,7 @@ python send_app.py
 ```
 
 **Note:** this script will generate and fill fake data into an application form, but it won't solve captchas. That's up to you, you have about 2 minutes to solve a captcha, otherwise it will timeout.
+
+## Contribute
+
+The script has been developed in my spare time and it can be severely improved, so feel free to open a PR/issue or message me if you have any feedback!
