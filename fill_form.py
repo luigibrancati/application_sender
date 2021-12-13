@@ -109,7 +109,7 @@ class ApplicationFiller():
         Select(self.driver.find_element(By.ID, "fbclc_ituCode")).select_by_value('US')
         Select(self.driver.find_element(By.ID, "fbclc_country")).select_by_value('US')
 
-    def solve_captcha(self):
+    def start_captcha(self):
         # Must be done by hand unfortunately
         
         logging.info("Starting CAPTCHA")
@@ -141,8 +141,8 @@ class ApplicationFiller():
             logging.error("timeout, captcha hasn't been solved in time")
             self.driver.quit()
             exit(1)
-        time.sleep(2)
 
+    def accepting_privacy(self):
         logging.info("Accepting privacy")
         self._wait_element((By.ID, "dataPrivacyId"))
         self.driver.find_element(By.ID, "dataPrivacyId").click()
@@ -253,7 +253,8 @@ class ApplicationFiller():
         self.new_application()
         self.create_new_account()
         self.fill_new_account_info(fake_id)
-        self.solve_captcha()
+        self.start_captcha()
+        self.accepting_privacy()
         time.sleep(2)
         self.load_resume()
         self.fill_profile_info(fake_id)
